@@ -1,38 +1,34 @@
-.App {
-  text-align: center;
+.numeric-input-button {
+  font-size: large;
+  padding-left: 20px;
+  padding-right: 20px;
+  /*
+  This stuff prevents highlighting of the input group text,
+  was a problem on mobile devices as clicking + or - multiple times would highlight the text
+  rather than increment.
+  */
+  -webkit-touch-callout:none;
+  -webkit-user-select:none;
+  -khtml-user-select:none;
+  -moz-user-select:none;
+  -ms-user-select:none;
+  user-select:none;
+  -webkit-tap-highlight-color:rgba(0,0,0,0);
 }
 
-.App-logo {
-  height: 40vmin;
-  pointer-events: none;
-}
-
-@media (prefers-reduced-motion: no-preference) {
-  .App-logo {
-    animation: App-logo-spin infinite 20s linear;
-  }
-}
-
-.App-header {
-  background-color: #282c34;
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  font-size: calc(10px + 2vmin);
+.verb-badge {
+  margin: 2px;
   color: white;
+  background-color: green;
 }
 
-.App-link {
-  color: #61dafb;
+.noun-badge {
+  margin: 2px;
+  color: white;
+  background-color: red;
 }
 
-@keyframes App-logo-spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
+.badge-highlight {
+  color: yellow;
+  border: 4px solid black
 }
