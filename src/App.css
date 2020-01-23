@@ -28,7 +28,47 @@
   background-color: red;
 }
 
+.adjective-badge {
+  margin: 2px;
+  color: white;
+  background-color: blueviolet;
+}
+
+.adverb-badge {
+  margin: 2px;
+  color: white;
+  background-color: coral;
+}
+
 .badge-highlight {
   color: yellow;
   border: 4px solid black
+}
+
+.control-label {
+  font-size: 25px;
+}
+
+.margin-bottom-md {
+  margin-bottom: 15px;
+}
+
+.margin-bottom-xs {
+  margin-bottom: 5px;
+}
+
+.margin-bottom-0 {
+  margin-bottom: 0;
+}
+
+/* Hide input arrows webkit */
+input::-webkit-outer-spin-button,
+input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+/* ...Firefox */
+input[type=number] {
+  -moz-appearance: textfield;
 }
