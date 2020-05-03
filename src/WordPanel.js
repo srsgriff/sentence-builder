@@ -12,14 +12,16 @@ export default class WordPanel extends React.Component {
         selectedVerb: null,
         selectedNoun: null,
         selectedAdjective: null,
-        selectedAdverb: null
+        selectedAdverb: null,
+        selectedConjunction: null
     }
 
     selectCurrentWords = () => this.setState({
         selectedVerb: sample(this.props.currentVerbs.filter((w) => w !== this.state.selectedVerb)),
         selectedNoun: sample(this.props.currentNouns.filter((w) => w !== this.state.selectedNoun)),
         selectedAdjective: sample(this.props.currentAdjectives.filter((w) => w !== this.state.selectedAdjective)),
-        selectedAdverb: sample(this.props.currentAdverbs.filter((w) => w !== this.state.selectedAdverb))
+        selectedAdverb: sample(this.props.currentAdverbs.filter((w) => w !== this.state.selectedAdverb)),
+        selectedConjunction: sample(this.props.currentConjunctions.filter((w) => w !== this.state.selectedConjunction))
     })
 
     renderWordSelection = (words, selectedWord, badgeClass) => words.map((word, i) => (
@@ -70,6 +72,15 @@ export default class WordPanel extends React.Component {
                                             <Col style={{paddingLeft: 5}}>
                                                 <h3 className="text-center">
                                                     {this.renderWordSelection(this.props.currentAdverbs, this.state.selectedAdverb, "adverb-badge")}
+                                                </h3>
+                                            </Col>
+                                        ) : null
+                                    }
+                                    {
+                                        !isEmpty(this.props.currentConjunctions) ? (
+                                            <Col style={{paddingLeft: 5}}>
+                                                <h3 className="text-center">
+                                                    {this.renderWordSelection(this.props.currentConjunctions, this.state.selectedConjunction, "conjunction-badge")}
                                                 </h3>
                                             </Col>
                                         ) : null

@@ -17,45 +17,51 @@ export default class App extends React.Component {
 
         defaultVerbs: true,
         defaultNouns: true,
+        defaultAdjectives: true,
+        defaultAdverbs: true,
 
         verbsActive: true,
         nounsActive: true,
-        adverbsActive: false,
         adjectivesActive: false,
+        adverbsActive: false,
+        conjunctionsActive: false,
 
         verbLength: 4,
         nounLength: 4,
-        adverbLength: 4,
         adjectiveLength: 4,
+        adverbLength: 5,
 
         workingVerbLength: 4,
         workingNounLength: 4,
-        workingAdverbLength: 4,
         workingAdjectiveLength: 4,
+        workingAdverbLength: 5,
 
         verbs: [],
         nouns: [],
         adjectives: [],
         adverbs: [],
+        conjunctions: [],
 
         currentVerbs: [],
         currentNouns: [],
         currentAdjectives: [],
         currentAdverbs: [],
+        currentConjunctions: [],
     }
 
     componentDidMount() {
         this.fetchWords("./words/verb/default.txt", (words) => {
-            this.setState({verbs: words})
-            if (this.state.nouns) this.updateWords()
+            this.setState({verbs: words});
+            if (this.state.nouns) this.updateWords();
         })
         this.fetchWords("./words/noun/default.txt", (words) => {
-            this.setState({nouns: words})
-            if (this.state.verbs) this.updateWords()
+            this.setState({nouns: words});
+            if (this.state.verbs) this.updateWords();
         })
         // Adjectives and adverbs off by default so no need to update words after loading
-        this.fetchWords("./words/adjective/adjective.txt", (words) => this.setState({adjectives: words}))
-        this.fetchWords("./words/adverb/adverb.txt", (words) => this.setState({adverbs: words}))
+        this.fetchWords("./words/adjective/default.txt", (words) => this.setState({adjectives: words}))
+        this.fetchWords("./words/adverb/default.txt", (words) => this.setState({adverbs: words}))
+        this.fetchWords("./words/conjunction/default.txt", (words) => this.setState({conjunctions: words}))
     }
 
     fetchWords = (filename, callback) => {
@@ -68,8 +74,8 @@ export default class App extends React.Component {
                 }
 
                 response.text().then((data) => {
-                    callback(data.split("\n"))
-                    this.setState({loading: false})
+                    callback(data.split("\n"));
+                    this.setState({loading: false});
                 })
             })
     }
@@ -80,6 +86,7 @@ export default class App extends React.Component {
             currentNouns: this.selectWords(this.state.nouns, isMixedLengths ? null : this.state.workingNounLength),
             currentAdjectives: this.selectWords(this.state.adjectives, isMixedLengths ? null : this.state.workingAdjectiveLength),
             currentAdverbs: this.selectWords(this.state.adverbs, isMixedLengths ? null : this.state.workingAdverbLength),
+            currentConjunctions: this.selectWords(this.state.conjunctions, null),
 
             verbLength: this.state.workingVerbLength,
             nounLength: this.state.workingNounLength,
@@ -117,6 +124,32 @@ export default class App extends React.Component {
         }
     }
 
+    updateAdjectiveList = (defaultAdjectives) => {
+        if (this.state.defaultAdjectives !== defaultAdjectives) {
+            this.setState({defaultAdjectives: defaultAdjectives})
+            this.fetchWords(
+                "./words/adjective/" + (defaultAdjectives ? "default" : "adjective") + ".txt",
+                (words) => {
+                    this.setState({adjectives: words})
+                    this.updateWords(false)
+                }
+            )
+        }
+    }
+
+    updateAdverbList = (defaultAdverbs) => {
+        if (this.state.defaultAdverbs !== defaultAdverbs) {
+            this.setState({defaultAdverbs: defaultAdverbs})
+            this.fetchWords(
+                "./words/adverb/" + (defaultAdverbs ? "default" : "adverb") + ".txt",
+                (words) => {
+                    this.setState({adverbs: words})
+                    this.updateWords(false)
+                }
+            )
+        }
+    }
+
     activateVerbs = () => {
         this.setState({verbsActive: !this.state.verbsActive})
         if (!this.state.currentVerbs) {
@@ -138,7 +171,7 @@ export default class App extends React.Component {
     }
 
     activateAdjectives = () => {
-        this.setState({adjectivesActive: !this.state.adjectivesActive})
+        this.setState({e: !this.state.adjectivesActive})
         if (!this.state.currentAdjectives) {
             this.setState({
                 currentAdjectives: this.selectWords(this.state.adjectives, this.state.workingAdjectiveLength),
@@ -159,17 +192,17 @@ export default class App extends React.Component {
 
     render () {
         return (<>
-            <Navbar bg="dark" variant="dark">
-                <Navbar.Brand>Sentence Builder</Navbar.Brand>
-                <Nav className="ml-auto">
-                    <Nav.Item>
-                        <Nav.Link onClick={() => this.setState({showSettings: !this.state.showSettings})}>
-                            {this.state.showSettings ? "Hide" : "Show"} settings
-                        </Nav.Link>
-                    </Nav.Item>
-                </Nav>
-            </Navbar>
-            <Container fluid='true'>
+            <Container className="px-0">
+                <Navbar bg="dark" variant="dark">
+                    <Navbar.Brand>Sentence Builder</Navbar.Brand>
+                    <Nav className="ml-auto">
+                        <Nav.Item>
+                            <Nav.Link onClick={() => this.setState({showSettings: !this.state.showSettings})}>
+                                {this.state.showSettings ? "Hide" : "Show"} settings
+                            </Nav.Link>
+                        </Nav.Item>
+                    </Nav>
+                </Navbar>
                 <Collapse in={this.state.showSettings}>
                     <div>
                         <Card>
@@ -177,7 +210,6 @@ export default class App extends React.Component {
                                 <FormGroup>
                                     <Form.Check
                                         checked={this.state.verbsActive}
-                                        // should be event.target.value?
                                         onChange={this.activateVerbs}
                                         inline type="checkbox" label="verbs"/>
                                     <Form.Check
@@ -188,10 +220,19 @@ export default class App extends React.Component {
                                         checked={this.state.adjectivesActive}
                                         onChange={() => this.setState({adjectivesActive: !this.state.adjectivesActive})}
                                         inline type="checkbox" label="adjectives"/>
-                                    <Form.Check inline
+                                    <Form.Check
                                         checked={this.state.adverbsActive}
                                         onChange={() => this.setState({adverbsActive: !this.state.adverbsActive})}
                                         inline type="checkbox" label="adverbs"/>
+                                    <Form.Check
+                                        checked={this.state.conjunctionsActive}
+                                        onChange={() =>
+                                            this.setState({
+                                                conjunctionsActive: !this.state.conjunctionsActive,
+                                                currentConjunctions: this.selectWords(this.state.conjunctions, null)
+                                            })
+                                        }
+                                        inline type="checkbox" label="conjunctions"/>
                                 </FormGroup>
                                 <Row>
                                     <Col style={{fontWeight: "bold"}}>Verb list</Col>
@@ -213,6 +254,28 @@ export default class App extends React.Component {
                                     <Form.Check
                                         checked={!this.state.defaultNouns}
                                         onChange={() => this.updateNounList(false)}
+                                        inline type="radio" label="full dictionary"/>
+                                </Row>
+                                <Row>
+                                    <Col style={{fontWeight: "bold"}}>Adjective list</Col>
+                                    <Form.Check
+                                        checked={this.state.defaultAdjectives}
+                                        onChange={() => this.updateAdjectiveList(true)}
+                                        inline type="radio" label="default"/>
+                                    <Form.Check
+                                        checked={!this.state.defaultAdjectives}
+                                        onChange={() => this.updateAdjectiveList(false)}
+                                        inline type="radio" label="full dictionary"/>
+                                </Row>
+                                <Row>
+                                    <Col style={{fontWeight: "bold"}}>Adverb list</Col>
+                                    <Form.Check
+                                        checked={this.state.defaultAdverbs}
+                                        onChange={() => this.updateAdverbList(true)}
+                                        inline type="radio" label="default"/>
+                                    <Form.Check
+                                        checked={!this.state.defaultAdverbs}
+                                        onChange={() => this.updateAdverbList(false)}
                                         inline type="radio" label="full dictionary"/>
                                 </Row>
                             </Card.Body>
@@ -338,7 +401,8 @@ export default class App extends React.Component {
                     currentVerbs={this.state.verbsActive ? this.state.currentVerbs : []}
                     currentNouns={this.state.nounsActive ? this.state.currentNouns : []}
                     currentAdjectives={this.state.adjectivesActive ? this.state.currentAdjectives : []}
-                    currentAdverbs={this.state.adverbsActive ? this.state.currentAdverbs : []}/>
+                    currentAdverbs={this.state.adverbsActive ? this.state.currentAdverbs : []}
+                    currentConjunctions={this.state.conjunctionsActive ? this.state.currentConjunctions : []}/>
             </Container>
         </>);
     }
