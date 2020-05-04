@@ -1,194 +1,200 @@
 import 'bootstrap/dist/css/bootstrap.min.css';
-import { shuffle } from 'lodash';
+import { shuffle, isEmpty } from 'lodash';
 import React from 'react';
 import { Button, Col, Form, FormGroup, InputGroup, Nav, Navbar, Collapse, Row, Badge } from 'react-bootstrap';
 import Card from 'react-bootstrap/Card';
 import Container from 'react-bootstrap/Container';
 import './App.css';
 import WordPanel from './WordPanel';
+import HelpModal from './HelpModal';
 
 const NUMBER_OF_WORDS = 6;
+
+class WordType {
+    words = []
+    currentWords = []
+    length = 4
+    workingLength = 4
+    active = false
+    default = true
+
+    // Pass an object with new state or a function taking existing state and returning new state
+    with(newState) {
+        let newInstance = Object.assign(new WordType(), this)
+        return Object.assign(newInstance, typeof newState === "function" ? newState(this) : newState)
+    }
+}
 
 export default class App extends React.Component {
 
     state = {
         loading: false,
         showSettings: false,
+        showHelp: false,
 
-        defaultVerbs: true,
-        defaultNouns: true,
-        defaultAdjectives: true,
-        defaultAdverbs: true,
-
-        verbsActive: true,
-        nounsActive: true,
-        adjectivesActive: false,
-        adverbsActive: false,
-        conjunctionsActive: false,
-
-        verbLength: 4,
-        nounLength: 4,
-        adjectiveLength: 4,
-        adverbLength: 5,
-
-        workingVerbLength: 4,
-        workingNounLength: 4,
-        workingAdjectiveLength: 4,
-        workingAdverbLength: 5,
-
-        verbs: [],
-        nouns: [],
-        adjectives: [],
-        adverbs: [],
-        conjunctions: [],
-
-        currentVerbs: [],
-        currentNouns: [],
-        currentAdjectives: [],
-        currentAdverbs: [],
-        currentConjunctions: [],
+        verb: new WordType().with({active: true}),
+        noun: new WordType().with({active: true}),
+        adjective: new WordType(),
+        adverb: new WordType().with({length: 5, workingLength: 5}),
+        conjunction: new WordType().with({length: null, workingLength: null}),
     }
 
     componentDidMount() {
         this.fetchWords("./words/verb/default.txt", (words) => {
-            this.setState({verbs: words});
-            if (this.state.nouns) this.updateWords();
+            this.setState({verb: this.state.verb.with({words: words})});
+            if (this.state.noun.words) this.updateWords();
         })
         this.fetchWords("./words/noun/default.txt", (words) => {
-            this.setState({nouns: words});
-            if (this.state.verbs) this.updateWords();
+            this.setState({noun: this.state.noun.with({words: words})});
+            if (this.state.noun.words) this.updateWords();
         })
         // Adjectives and adverbs off by default so no need to update words after loading
-        this.fetchWords("./words/adjective/default.txt", (words) => this.setState({adjectives: words}))
-        this.fetchWords("./words/adverb/default.txt", (words) => this.setState({adverbs: words}))
-        this.fetchWords("./words/conjunction/default.txt", (words) => this.setState({conjunctions: words}))
+        this.fetchWords("./words/adjective/default.txt", (words) => this.setState({adjective: this.state.adjective.with({words: words})}))
+        this.fetchWords("./words/adverb/default.txt", (words) => this.setState({adverb: this.state.adverb.with({words: words})}))
+        this.fetchWords("./words/conjunction/default.txt", (words) => this.setState({conjunction: this.state.conjunction.with({words: words})}))
     }
 
     fetchWords = (filename, callback) => {
         this.setState({loading: true})
-        fetch(filename)
-            .then((response) => {
-                if (response.status !== 200) {
-                    console.log('Unable to fetch ' + filename + '. Status Code: ' + response.status);
-                    return;
-                }
 
-                response.text().then((data) => {
-                    callback(data.split("\n"));
-                    this.setState({loading: false});
-                })
+        fetch(filename).then((response) => {
+            if (response.status !== 200) {
+                alert(`Unable to fetch word file: ${filename} Status Code: ${response.status}`);
+                return;
+            }
+
+            response.text().then((data) => {
+                callback(data.split("\n"));
+                this.setState({loading: false});
             })
+        })
     }
 
     updateWords = (isMixedLengths) => {
         this.setState({
-            currentVerbs: this.selectWords(this.state.verbs, isMixedLengths ? null : this.state.workingVerbLength),
-            currentNouns: this.selectWords(this.state.nouns, isMixedLengths ? null : this.state.workingNounLength),
-            currentAdjectives: this.selectWords(this.state.adjectives, isMixedLengths ? null : this.state.workingAdjectiveLength),
-            currentAdverbs: this.selectWords(this.state.adverbs, isMixedLengths ? null : this.state.workingAdverbLength),
-            currentConjunctions: this.selectWords(this.state.conjunctions, null),
-
-            verbLength: this.state.workingVerbLength,
-            nounLength: this.state.workingNounLength,
-            adjectiveLength: this.state.workingAdjectiveLength,
-            adverbLength: this.state.workingAdverbLength
+            verb: this.state.verb.with((current) => ({
+                currentWords: this.selectWords(current.words, isMixedLengths ? null : current.workingLength),
+                length: current.workingLength
+            })),
+            noun: this.state.noun.with((current) => ({
+                currentWords: this.selectWords(current.words, isMixedLengths ? null : current.workingLength),
+                length: current.workingLength
+            })),
+            adjective: this.state.adjective.with((current) => ({
+                currentWords: this.selectWords(current.words, isMixedLengths ? null : current.workingLength),
+                length: current.workingLength
+            })),
+            adverb: this.state.adverb.with((current) => ({
+                currentWords: this.selectWords(current.words, isMixedLengths ? null : current.workingLength),
+                length: current.workingLength
+            })),
+            conjunction: this.state.conjunction.with((current) => ({currentWords: this.selectWords(current.words, null)})),
         })
     }
 
     selectWords = (words, wordLength) => shuffle(wordLength ? words.filter((w) => w.length === wordLength) : words)
         .slice(0, NUMBER_OF_WORDS)
 
-    updateVerbList = (defaultVerbs) => {
-        if (this.state.defaultVerbs !== defaultVerbs) {
-            this.setState({defaultVerbs: defaultVerbs})
+    updateWordList = (wordTypeString, isDefault) => {
+
+        if (this.state[wordTypeString].default !== isDefault) {
             this.fetchWords(
-                "./words/verb/" + (defaultVerbs ? "default" : "verb") + ".txt",
+                `./words/${wordTypeString}/${isDefault ? "default" : wordTypeString}.txt`,
                 (words) => {
-                    this.setState({verbs: words})
+                    this.setState({[wordTypeString]: this.state[wordTypeString].with({words: words, default: isDefault})})
                     this.updateWords(false)
                 }
             )
         }
     }
 
-    updateNounList = (defaultNouns) => {
-        if (this.state.defaultNouns !== defaultNouns) {
-            this.setState({defaultNouns: defaultNouns})
-            this.fetchWords(
-                "./words/noun/" + (defaultNouns ? "default" : "noun") + ".txt",
-                (words) => {
-                    this.setState({nouns: words})
-                    this.updateWords(false)
+    activateWordType = (wordTypeString) => {
+        let newWordState = this.state[wordTypeString].with((current) => ({active: !current.active}))
+
+        if (isEmpty(newWordState.currentWords)) {
+            newWordState = newWordState.with((current) => (
+                {
+                    currentWords: this.selectWords(current.words, current.workingLength),
+                    length: current.workingLength
                 }
-            )
+            ))
         }
+
+        this.setState({[wordTypeString]: newWordState});
     }
 
-    updateAdjectiveList = (defaultAdjectives) => {
-        if (this.state.defaultAdjectives !== defaultAdjectives) {
-            this.setState({defaultAdjectives: defaultAdjectives})
-            this.fetchWords(
-                "./words/adjective/" + (defaultAdjectives ? "default" : "adjective") + ".txt",
-                (words) => {
-                    this.setState({adjectives: words})
-                    this.updateWords(false)
-                }
-            )
-        }
-    }
+    capitalize = (string) => string.charAt(0).toUpperCase() + string.slice(1)
 
-    updateAdverbList = (defaultAdverbs) => {
-        if (this.state.defaultAdverbs !== defaultAdverbs) {
-            this.setState({defaultAdverbs: defaultAdverbs})
-            this.fetchWords(
-                "./words/adverb/" + (defaultAdverbs ? "default" : "adverb") + ".txt",
-                (words) => {
-                    this.setState({adverbs: words})
-                    this.updateWords(false)
-                }
-            )
-        }
-    }
+    getActivateCheckbox = (wordTypeString) => (
+        <Form.Check type="checkbox" inline>
+            <Form.Check.Input
+                type="checkbox"
+                checked={this.state[wordTypeString].active}
+                onChange={() => this.activateWordType(wordTypeString)}/>
+            <Form.Check.Label>
+                <Badge className={`${wordTypeString}-badge`}>{this.capitalize(wordTypeString)}s</Badge>
+            </Form.Check.Label>
+        </Form.Check>
+    )
 
-    activateVerbs = () => {
-        this.setState({verbsActive: !this.state.verbsActive})
-        if (!this.state.currentVerbs) {
-            this.setState({
-                currentVerbs: this.selectWords(this.state.verbs, this.state.workingVerbLength),
-                verbLength: this.workingVerbLength
-            })
-        }
-    }
+    getWordListControlBlock = (wordTypeString) => (<>
+        <Col xs="4" style={{fontWeight: "bold"}}>
+            {this.capitalize(wordTypeString)} list
+        </Col>
+        <Col xs="8" className="text-right">
+            <Form.Check
+                checked={this.state[wordTypeString].default}
+                onChange={() => this.updateWordList(wordTypeString, true)}
+                inline type="radio" label="default"/>
+            <Form.Check
+                checked={!this.state[wordTypeString].default}
+                onChange={() => this.updateWordList(wordTypeString, false)}
+                inline type="radio" label="full dictionary"/>
+        </Col>
+    </>)
 
-    activateNouns = () => {
-        this.setState({nounsActive: !this.state.nounsActive})
-        if (!this.state.currentNouns) {
-            this.setState({
-                currentNouns: this.selectWords(this.state.nouns, this.state.workingNounLength),
-                nounLength: this.workingNounLength
-            })
-        }
-    }
-
-    activateAdjectives = () => {
-        this.setState({e: !this.state.adjectivesActive})
-        if (!this.state.currentAdjectives) {
-            this.setState({
-                currentAdjectives: this.selectWords(this.state.adjectives, this.state.workingAdjectiveLength),
-                adjectiveLength: this.workingAdjectiveLength
-            })
-        }
-    }
-
-    activateAdverbs = () => {
-        this.setState({adverbsActive: !this.state.adverbsActive})
-        if (!this.state.currentAdverbs) {
-            this.setState({
-                currentAdverbs: this.selectWords(this.state.adverbs, this.state.workingAdverbLength),
-                adverbLength: this.workingAdverbLength
-            })
-        }
-    }
+    getWordLengthControl = (wordTypeString) => (
+        <Col className="text-center">
+            <FormGroup>
+                <Form.Label className="control-label">
+                    <Badge className={`${wordTypeString}-badge`}>{this.capitalize(wordTypeString)} Length</Badge>
+                </Form.Label>
+                <InputGroup className="word-length-input-group">
+                    <InputGroup.Prepend onClick={() =>
+                        this.setState({
+                            [wordTypeString]: this.state[wordTypeString].with(
+                                (current) => ({workingLength: current.workingLength - 1})
+                            )
+                        })
+                    }>
+                        <InputGroup.Text className="numeric-input-button">-</InputGroup.Text>
+                    </InputGroup.Prepend>
+                    <Form.Control
+                        type="number"
+                        size="lg"
+                        value={this.state[wordTypeString].workingLength}
+                        onChange={(e) => {
+                            if (e.target.value)
+                                this.setState({
+                                    [wordTypeString]: this.state[wordTypeString].with(
+                                        {workingLength: parseInt(e.target.value)}
+                                    )
+                                })
+                        }}
+                    />
+                    <InputGroup.Append onClick={() =>
+                        this.setState({
+                            [wordTypeString]: this.state[wordTypeString].with(
+                                (current) => ({workingLength: current.workingLength + 1})
+                            )
+                        })
+                    }>
+                        <InputGroup.Text className="numeric-input-button">+</InputGroup.Text>
+                    </InputGroup.Append>
+                </InputGroup>
+            </FormGroup>
+        </Col>
+    )
 
     render () {
         return (<>
@@ -197,8 +203,11 @@ export default class App extends React.Component {
                     <Navbar.Brand>Sentence Builder</Navbar.Brand>
                     <Nav className="ml-auto">
                         <Nav.Item>
+                            <Nav.Link onClick={() => this.setState({showHelp: !this.state.showHelp})}>Help</Nav.Link>
+                        </Nav.Item>
+                        <Nav.Item>
                             <Nav.Link onClick={() => this.setState({showSettings: !this.state.showSettings})}>
-                                {this.state.showSettings ? "Hide" : "Show"} settings
+                                {this.state.showSettings ? "Hide" : "Show"} Settings
                             </Nav.Link>
                         </Nav.Item>
                     </Nav>
@@ -208,76 +217,16 @@ export default class App extends React.Component {
                         <Card>
                             <Card.Body>
                                 <FormGroup>
-                                    <Form.Check
-                                        checked={this.state.verbsActive}
-                                        onChange={this.activateVerbs}
-                                        inline type="checkbox" label="verbs"/>
-                                    <Form.Check
-                                        checked={this.state.nounsActive}
-                                        onChange={() => this.setState({nounsActive: !this.state.nounsActive})}
-                                        inline type="checkbox" label="nouns"/>
-                                    <Form.Check
-                                        checked={this.state.adjectivesActive}
-                                        onChange={() => this.setState({adjectivesActive: !this.state.adjectivesActive})}
-                                        inline type="checkbox" label="adjectives"/>
-                                    <Form.Check
-                                        checked={this.state.adverbsActive}
-                                        onChange={() => this.setState({adverbsActive: !this.state.adverbsActive})}
-                                        inline type="checkbox" label="adverbs"/>
-                                    <Form.Check
-                                        checked={this.state.conjunctionsActive}
-                                        onChange={() =>
-                                            this.setState({
-                                                conjunctionsActive: !this.state.conjunctionsActive,
-                                                currentConjunctions: this.selectWords(this.state.conjunctions, null)
-                                            })
-                                        }
-                                        inline type="checkbox" label="conjunctions"/>
+                                    {this.getActivateCheckbox("verb")}
+                                    {this.getActivateCheckbox("noun")}
+                                    {this.getActivateCheckbox("adjective")}
+                                    {this.getActivateCheckbox("adverb")}
+                                    {this.getActivateCheckbox("conjunction")}
                                 </FormGroup>
-                                <Row>
-                                    <Col style={{fontWeight: "bold"}}>Verb list</Col>
-                                    <Form.Check
-                                        checked={this.state.defaultVerbs}
-                                        onChange={() => this.updateVerbList(true)}
-                                        inline type="radio" label="default"/>
-                                    <Form.Check
-                                        checked={!this.state.defaultVerbs}
-                                        onChange={() => this.updateVerbList(false)}
-                                        inline type="radio" label="full dictionary"/>
-                                </Row>
-                                <Row>
-                                    <Col style={{fontWeight: "bold"}}>Noun list</Col>
-                                    <Form.Check
-                                        checked={this.state.defaultNouns}
-                                        onChange={() => this.updateNounList(true)}
-                                        inline type="radio" label="default"/>
-                                    <Form.Check
-                                        checked={!this.state.defaultNouns}
-                                        onChange={() => this.updateNounList(false)}
-                                        inline type="radio" label="full dictionary"/>
-                                </Row>
-                                <Row>
-                                    <Col style={{fontWeight: "bold"}}>Adjective list</Col>
-                                    <Form.Check
-                                        checked={this.state.defaultAdjectives}
-                                        onChange={() => this.updateAdjectiveList(true)}
-                                        inline type="radio" label="default"/>
-                                    <Form.Check
-                                        checked={!this.state.defaultAdjectives}
-                                        onChange={() => this.updateAdjectiveList(false)}
-                                        inline type="radio" label="full dictionary"/>
-                                </Row>
-                                <Row>
-                                    <Col style={{fontWeight: "bold"}}>Adverb list</Col>
-                                    <Form.Check
-                                        checked={this.state.defaultAdverbs}
-                                        onChange={() => this.updateAdverbList(true)}
-                                        inline type="radio" label="default"/>
-                                    <Form.Check
-                                        checked={!this.state.defaultAdverbs}
-                                        onChange={() => this.updateAdverbList(false)}
-                                        inline type="radio" label="full dictionary"/>
-                                </Row>
+                                <Row>{this.getWordListControlBlock("verb")}</Row>
+                                <Row>{this.getWordListControlBlock("noun")}</Row>
+                                <Row>{this.getWordListControlBlock("adjective")}</Row>
+                                <Row>{this.getWordListControlBlock("adverb")}</Row>
                             </Card.Body>
                         </Card>
                     </div>
@@ -285,102 +234,10 @@ export default class App extends React.Component {
                 <Card className="margin-bottom-md">
                     <Card.Body>
                         <Form.Row>
-                            {
-                                this.state.verbsActive ? (
-                                    <Col className="text-center">
-                                        <FormGroup>
-                                            <Form.Label className="control-label">
-                                                <Badge className="verb-badge">Verb Length</Badge>
-                                            </Form.Label>
-                                            <InputGroup>
-                                                <InputGroup.Prepend onClick={() => this.setState({workingVerbLength: this.state.workingVerbLength - 1})}>
-                                                    <InputGroup.Text className="numeric-input-button">-</InputGroup.Text>
-                                                </InputGroup.Prepend>
-                                                <Form.Control
-                                                    type="number"
-                                                    size="lg"
-                                                    value={this.state.workingVerbLength}
-                                                    onChange={(e) => e.target.value ? this.setState({workingVerbLength: parseInt(e.target.value)}) : null}/>
-                                                <InputGroup.Append onClick={() => this.setState({workingVerbLength: this.state.workingVerbLength + 1})}>
-                                                    <InputGroup.Text className="numeric-input-button">+</InputGroup.Text>
-                                                </InputGroup.Append>
-                                            </InputGroup>
-                                        </FormGroup>
-                                    </Col>
-                                ) : null
-                            }
-                            {
-                                this.state.nounsActive ? (
-                                    <Col className="text-center">
-                                        <FormGroup>
-                                            <Form.Label className="control-label">
-                                                <Badge className="noun-badge">Noun Length</Badge>
-                                            </Form.Label>
-                                            <InputGroup>
-                                                <InputGroup.Prepend onClick={() => this.setState({workingNounLength: this.state.workingNounLength - 1})}>
-                                                    <InputGroup.Text className="numeric-input-button">-</InputGroup.Text>
-                                                </InputGroup.Prepend>
-                                                <Form.Control
-                                                    type="number"
-                                                    size="lg"
-                                                    value={this.state.workingNounLength}
-                                                    onChange={(e) => e.target.value ? this.setState({workingNounLength: parseInt(e.target.value)}) : null}/>
-                                                <InputGroup.Append onClick={() => this.setState({workingNounLength: this.state.workingNounLength + 1})}>
-                                                    <InputGroup.Text className="numeric-input-button">+</InputGroup.Text>
-                                                </InputGroup.Append>
-                                            </InputGroup>
-                                        </FormGroup>
-                                    </Col>
-                                ) : null
-                            }
-                            {
-                                this.state.adjectivesActive ? (
-                                    <Col className="text-center">
-                                        <FormGroup>
-                                            <Form.Label className="control-label">
-                                                <Badge className="adjective-badge">Adjective Length</Badge>
-                                            </Form.Label>
-                                            <InputGroup>
-                                                <InputGroup.Prepend onClick={() => this.setState({workingAdjectiveLength: this.state.workingAdjectiveLength - 1})}>
-                                                    <InputGroup.Text className="numeric-input-button">-</InputGroup.Text>
-                                                </InputGroup.Prepend>
-                                                <Form.Control
-                                                    type="number"
-                                                    size="lg"
-                                                    value={this.state.workingAdjectiveLength}
-                                                    onChange={(e) => e.target.value ? this.setState({workingAdjectiveLength: parseInt(e.target.value)}) : null}/>
-                                                <InputGroup.Append onClick={() => this.setState({workingAdjectiveLength: this.state.workingAdjectiveLength + 1})}>
-                                                    <InputGroup.Text className="numeric-input-button">+</InputGroup.Text>
-                                                </InputGroup.Append>
-                                            </InputGroup>
-                                        </FormGroup>
-                                    </Col>
-                                ) : null
-                            }
-                            {
-                                this.state.adverbsActive ? (
-                                    <Col className="text-center">
-                                        <FormGroup>
-                                            <Form.Label className="control-label">
-                                                <Badge className="adverb-badge">Adverb Length</Badge>
-                                            </Form.Label>
-                                            <InputGroup>
-                                                <InputGroup.Prepend onClick={() => this.setState({workingAdverbLength: this.state.workingAdverbLength - 1})}>
-                                                    <InputGroup.Text className="numeric-input-button">-</InputGroup.Text>
-                                                </InputGroup.Prepend>
-                                                <Form.Control
-                                                    type="number"
-                                                    size="lg"
-                                                    value={this.state.workingAdverbLength}
-                                                    onChange={(e) => e.target.value ? this.setState({workingAdverbLength: parseInt(e.target.value)}) : null}/>
-                                                <InputGroup.Append onClick={() => this.setState({workingAdverbLength: this.state.workingAdverbLength + 1})}>
-                                                    <InputGroup.Text className="numeric-input-button">+</InputGroup.Text>
-                                                </InputGroup.Append>
-                                            </InputGroup>
-                                        </FormGroup>
-                                    </Col>
-                                ) : null
-                            }
+                            {this.state.verb.active ? this.getWordLengthControl("verb") : null}
+                            {this.state.noun.active ? this.getWordLengthControl("noun") : null}
+                            {this.state.adjective.active ? this.getWordLengthControl("adjective") : null}
+                            {this.state.adverb.active ? this.getWordLengthControl("adverb") : null}
                         </Form.Row>
                         <Form.Row>
                             <Col>
@@ -398,11 +255,14 @@ export default class App extends React.Component {
                 </Card>
                 <WordPanel
                     loading={this.state.loading}
-                    currentVerbs={this.state.verbsActive ? this.state.currentVerbs : []}
-                    currentNouns={this.state.nounsActive ? this.state.currentNouns : []}
-                    currentAdjectives={this.state.adjectivesActive ? this.state.currentAdjectives : []}
-                    currentAdverbs={this.state.adverbsActive ? this.state.currentAdverbs : []}
-                    currentConjunctions={this.state.conjunctionsActive ? this.state.currentConjunctions : []}/>
+                    currentVerbs={this.state.verb.active ? this.state.verb.currentWords : null}
+                    currentNouns={this.state.noun.active ? this.state.noun.currentWords : null}
+                    currentAdjectives={this.state.adjective.active ? this.state.adjective.currentWords : null}
+                    currentAdverbs={this.state.adverb.active ? this.state.adverb.currentWords : null}
+                    currentConjunctions={this.state.conjunction.active ? this.state.conjunction.currentWords : null}/>
+                <HelpModal
+                    showHelp={this.state.showHelp}
+                    onHide={() => this.setState({showHelp: false})}/>
             </Container>
         </>);
     }

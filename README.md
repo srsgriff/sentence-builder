@@ -1,3 +1,5 @@
+Check out the live app here: [https://sentence-builder.mooo.com](https://sentence-builder.mooo.com)
+
 This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
 
 ## Available Scripts

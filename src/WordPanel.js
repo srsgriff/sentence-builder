@@ -17,18 +17,36 @@ export default class WordPanel extends React.Component {
     }
 
     selectCurrentWords = () => this.setState({
-        selectedVerb: sample(this.props.currentVerbs.filter((w) => w !== this.state.selectedVerb)),
-        selectedNoun: sample(this.props.currentNouns.filter((w) => w !== this.state.selectedNoun)),
-        selectedAdjective: sample(this.props.currentAdjectives.filter((w) => w !== this.state.selectedAdjective)),
-        selectedAdverb: sample(this.props.currentAdverbs.filter((w) => w !== this.state.selectedAdverb)),
-        selectedConjunction: sample(this.props.currentConjunctions.filter((w) => w !== this.state.selectedConjunction))
+        selectedVerb: this.props.currentVerbs ?
+                sample(this.props.currentVerbs.filter((w) => w !== this.state.selectedVerb)) : null,
+        selectedNoun: this.props.currentNouns ?
+                sample(this.props.currentNouns.filter((w) => w !== this.state.selectedNoun)) : null,
+        selectedAdjective: this.props.currentAdjectives ?
+                sample(this.props.currentAdjectives.filter((w) => w !== this.state.selectedAdjective)) : null,
+        selectedAdverb: this.props.currentAdverbs ?
+                sample(this.props.currentAdverbs.filter((w) => w !== this.state.selectedAdverb)) : null,
+        selectedConjunction: this.props.currentConjunctions ?
+                sample(this.props.currentConjunctions.filter((w) => w !== this.state.selectedConjunction)) : null
     })
 
-    renderWordSelection = (words, selectedWord, badgeClass) => words.map((word, i) => (
-        <div style={{paddingRight: 5}} key={i}>
-            <Badge className={badgeClass + (word === selectedWord ? " badge-highlight" : "")}>{word}</Badge>
-        </div>
-    ))
+
+
+    renderWordSelection = (words, selectedWord, badgeClass) => words ? (
+        <Col style={{paddingRight: 5}}>
+            <h3 className="text-center">
+                {
+                    !isEmpty(words) ?
+                        words.map((word, i) => (
+                            <div style={{paddingRight: 5}} key={i}>
+                                <Badge className={badgeClass + (word === selectedWord ? " badge-highlight" : "")}>{word}</Badge>
+                            </div>
+                        ))
+                    :
+                    (<Badge className={badgeClass}>No words</Badge>)
+                }
+            </h3>
+        </Col>
+    ) : null
 
     render() {
         return (
@@ -40,51 +58,11 @@ export default class WordPanel extends React.Component {
                             :
                             (<>
                                 <Row>
-                                    {
-                                        !isEmpty(this.props.currentVerbs) ? (
-                                            <Col style={{paddingRight: 5}}>
-                                                <h3 className="text-center">
-                                                    {this.renderWordSelection(this.props.currentVerbs, this.state.selectedVerb, "verb-badge")}
-                                                </h3>
-                                            </Col>
-                                        ) : null
-                                    }
-                                    {
-                                        !isEmpty(this.props.currentNouns) ? (
-                                            <Col style={{paddingLeft: 5}}>
-                                                <h3 className="text-center">
-                                                    {this.renderWordSelection(this.props.currentNouns, this.state.selectedNoun, "noun-badge")}
-                                                </h3>
-                                            </Col>
-                                        ) : null
-                                    }
-                                    {
-                                        !isEmpty(this.props.currentAdjectives) ? (
-                                            <Col style={{paddingLeft: 5}}>
-                                                <h3 className="text-center">
-                                                    {this.renderWordSelection(this.props.currentAdjectives, this.state.selectedAdjective, "adjective-badge")}
-                                                </h3>
-                                            </Col>
-                                        ) : null
-                                    }
-                                    {
-                                        !isEmpty(this.props.currentAdverbs) ? (
-                                            <Col style={{paddingLeft: 5}}>
-                                                <h3 className="text-center">
-                                                    {this.renderWordSelection(this.props.currentAdverbs, this.state.selectedAdverb, "adverb-badge")}
-                                                </h3>
-                                            </Col>
-                                        ) : null
-                                    }
-                                    {
-                                        !isEmpty(this.props.currentConjunctions) ? (
-                                            <Col style={{paddingLeft: 5}}>
-                                                <h3 className="text-center">
-                                                    {this.renderWordSelection(this.props.currentConjunctions, this.state.selectedConjunction, "conjunction-badge")}
-                                                </h3>
-                                            </Col>
-                                        ) : null
-                                    }
+                                    {this.renderWordSelection(this.props.currentVerbs, this.state.selectedVerb, "verb-badge")}
+                                    {this.renderWordSelection(this.props.currentNouns, this.state.selectedNoun, "noun-badge")}
+                                    {this.renderWordSelection(this.props.currentAdjectives, this.state.selectedAdjective, "adjective-badge")}
+                                    {this.renderWordSelection(this.props.currentAdverbs, this.state.selectedAdverb, "adverb-badge")}
+                                    {this.renderWordSelection(this.props.currentConjunctions, this.state.selectedConjunction, "conjunction-badge")}
                                 </Row>
                                 <div className="text-center padding-bottom-xs">
                                     <Button size="lg" onClick={this.selectCurrentWords}>Go</Button>

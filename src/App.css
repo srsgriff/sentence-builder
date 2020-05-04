@@ -90,3 +90,7 @@ input[type=number] {
      width: 768px;
   }
 }
+
+.word-length-input-group {
+  min-width: 150px;
+}
